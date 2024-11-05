@@ -1,0 +1,59 @@
+# Django specific files and folders
+*.log
+*.pot
+*.pyc
+__pycache__/
+db.sqlite3
+.DS_Store
+
+# Ignore environment variable files
+.env
+*.env
+
+# Ignore virtual environment folder
+venv/
+env/
+
+# Ignore media and static files generated during runtime
+media/
+staticfiles/
+
+# Ignore compiled and compressed files
+*.gz
+*.zip
+*.tar
+*.tar.gz
+
+# Django secret key file (if using a secret key file)
+secret_key.txt
+
+# Ignore migrations (optional, but helpful if you want to regenerate migrations from scratch)
+*/migrations/*.py
+!*/migrations/__init__.py
+
+# Ignore IDE specific folders
+.vscode/
+.idea/
+
+# Ignore pip and Python files
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Ignore coverage report
+.coverage
+htmlcov/
+
+# Ignore testing files
+.tox/
+.pytest_cache/
+test_*.py
+nose*.xml
+
+# Ignore MySQL/SQLite/PostgreSQL database dumps
+*.sql
+
+# Ignore Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# Ignore system files
+Thumbs.db

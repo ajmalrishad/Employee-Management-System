@@ -1,0 +1,25 @@
+<!-- templates/employee/employee_detail.html -->
+{% extends 'base.html' %}
+
+{% block title %}Employee Detail - Employee Management{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center">{{ employee.name }}</h1>
+    <p class="lead text-center">Position: {{ employee.position }}</p>
+
+    <h4 class="mt-4">Email: {{ employee.email }}</h4>
+    
+    <h3 class="mt-4">Custom Fields</h3>
+    <ul class="list-group mt-3">
+        {% for key, value in employee.custom_fields.items %}
+            <li class="list-group-item"><strong>{{ key }}:</strong> {{ value }}</li>
+        {% endfor %}
+    </ul>
+
+    <div class="text-center mt-4">
+        <a href="{% url 'edit_employee' employee.pk %}" class="btn btn-primary">Edit Employee</a>
+        <a href="{% url 'home' %}" class="btn btn-success">Back to Home</a>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+<!-- templates/employee/create_employee.html -->
+{% extends 'base.html' %}
+
+{% block title %}Create Employee - Employee Management{% endblock %}
+
+{% block content %}
+<div class="container mt-0">
+    <h3 class="text-center">Add Employee</h3>
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        
+        <div class="mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" id="name" name="name" class="form-control" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="email" class="form-label">Email</label>
+            <input type="email" id="email" name="email" class="form-control" required>
+        </div>
+        
+        <div class="mb-3">
+            <label for="position" class="form-label">Position</label>
+            <input type="text" id="position" name="position" class="form-control" required>
+        </div>
+
+        <h4 class="mt-4">Custom Fields</h4>
+        <div id="custom-fields-container" class="mb-3"></div>
+        <button type="button" id="add-custom-field" class="btn btn-outline-secondary mb-5">Add Custom Field</button>
+        <button type="submit" class="btn btn-primary mb-5">Save</button>
+    </form>
+</div>
+
+<script>
+    document.getElementById('add-custom-field').addEventListener('click', function() {
+        const container = document.getElementById('custom-fields-container');
+        const fieldName = prompt("Enter custom field name:");
+        if (fieldName) {
+            const inputDiv = document.createElement('div');
+            inputDiv.classList.add('mb-3');
+            inputDiv.innerHTML = `
+                <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
+                <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
+            `;
+            container.appendChild(inputDiv);
+        }
+    });
+</script>
+{% endblock %}
