@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 import os
 from pathlib import Path
 from django.contrib.messages import constants as message_constants
+import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -102,7 +103,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'ems_db',
+        'NAME': 'employee_management',
         'USER': 'root',
         'PASSWORD': '12345',
         'HOST': 'localhost',  
@@ -180,8 +181,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = ''
-EMAIL_HOST_PASSWORD = ''
+EMAIL_HOST_USER = config.EMAIL_HOST_USER
+EMAIL_HOST_PASSWORD = config.EMAIL_HOST_PASSWORD
 
 # Message tags for Django messages
 MESSAGE_TAGS = {
