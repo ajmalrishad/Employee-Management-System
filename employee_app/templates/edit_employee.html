@@ -6,52 +6,117 @@
 {% block content %}
 <div class="container mt-5">
     <h3 class="text-center">Edit Employee</h3>
+    
+    <!-- Search Bar -->
+    <div class="row justify-content-end">
+        <div class="col-3">
+            <input type="text" id="search-bar" class="form-control form-control-sm" placeholder="Search fields...">
+        </div>
+    </div>
+
     <form method="post" class="mt-4">
         {% csrf_token %}
         
-        <div class="mb-3">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" id="name" name="name" class="form-control" value="{{ employee.name }}" required>
-        </div>
-        
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" required>
-        </div>
-        
-        <div class="mb-3">
-            <label for="position" class="form-label">Position</label>
-            <input type="text" id="position" name="position" class="form-control" value="{{ employee.position }}" required>
+        <div id="form-fields-container">
+            <div class="mb-3">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" id="name" name="name" class="form-control" value="{{ employee.name }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" required>
+            </div>
+            
+            <div class="mb-3">
+                <label for="position" class="form-label">Position</label>
+                <input type="text" id="position" name="position" class="form-control" value="{{ employee.position }}" required>
+            </div>
         </div>
 
         <h4 class="mt-4">Custom Fields</h4>
         <div id="custom-fields-container" class="mb-3">
             {% for key, value in employee.custom_fields.items %}
-                <div class="mb-3">
+                <div class="mb-3 sortable-item" data-key="{{ key }}">
                     <label for="custom_field_{{ key }}" class="form-label">{{ key }}</label>
                     <input type="text" id="custom_field_{{ key }}" name="custom_field_{{ key }}" class="form-control" value="{{ value }}">
                 </div>
             {% endfor %}
         </div>
+
         <button type="button" id="add-custom-field" class="btn btn-outline-secondary mb-5">Add Custom Field</button>
-        
         <button type="submit" class="btn btn-primary mb-5">Save Changes</button>
     </form>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
-    document.getElementById('add-custom-field').addEventListener('click', function() {
-        const container = document.getElementById('custom-fields-container');
-        const fieldName = prompt("Enter custom field name:");
-        if (fieldName) {
-            const inputDiv = document.createElement('div');
-            inputDiv.classList.add('mb-3');
-            inputDiv.innerHTML = `
-                <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
-                <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
-            `;
-            container.appendChild(inputDiv);
-        }
+    $(document).ready(function() {
+        // Make fields draggable (sortable)
+        $('#form-fields-container').sortable({
+            items: '.mb-3', 
+            cursor: 'move',          
+            opacity: 0.7,            
+            placeholder: 'ui-sortable-placeholder',
+            helper: 'clone',         
+            distance: 5,             
+            tolerance: 'pointer',    
+            scroll: true,            
+            scrollSensitivity: 50,   
+            scrollSpeed: 10,         
+            delay: 100,              
+            start: function(event, ui) {
+                ui.helper.css('z-index', 999); 
+            }
+        });
+
+        // Make custom fields draggable
+        $('#custom-fields-container').sortable({
+            items: '.sortable-item',
+            cursor: 'move',          
+            opacity: 0.7,            
+            placeholder: 'ui-sortable-placeholder',
+            helper: 'clone',         
+            distance: 5,             
+            tolerance: 'pointer',    
+            scroll: true,            
+            scrollSensitivity: 50,   
+            scrollSpeed: 10,         
+            delay: 100,              
+            start: function(event, ui) {
+                ui.helper.css('z-index', 999); 
+            }
+        });
+
+        // Add custom field
+        $('#add-custom-field').click(function() {
+            const container = $('#custom-fields-container');
+            const fieldName = prompt("Enter custom field name:");
+            if (fieldName) {
+                const inputDiv = $('<div class="mb-3 sortable-item"></div>');
+                inputDiv.html(`
+                    <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
+                    <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
+                `);
+                container.append(inputDiv);
+            }
+        });
+
+        // Search functionality
+        $('#search-bar').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            
+            // Search for matching fields in both form fields and custom fields
+            $('#form-fields-container .mb-3, #custom-fields-container .sortable-item').each(function() {
+                const labelText = $(this).find('label').text().toLowerCase();
+                const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
+                
+                // Hide or show fields based on search query
+                $(this).toggle(labelText.includes(value) || inputValue.includes(value));
+            });
+        });
     });
 </script>
+
 {% endblock %}

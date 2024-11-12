@@ -1,6 +1,7 @@
 # views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import JsonResponse
+from django.urls import reverse
 from .models import Employee
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -18,27 +19,38 @@ def admin_only(view_func):
 @admin_only
 @login_required
 def create_employee(request):
-    if request.method == 'POST':
-        # Retrieve basic employee information from the POST request
-        name = request.POST.get('name')
-        email = request.POST.get('email')
-        position = request.POST.get('position')
+    if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest':  # Check for AJAX request
+        try:
+            # Retrieve basic employee information from the POST request
+            name = request.POST.get('name')
+            email = request.POST.get('email')
+            position = request.POST.get('position')
+            
+            # Retrieve custom fields from the POST request
+            custom_fields = {}
+            for key in request.POST:
+                if key.startswith('custom_field_'):
+                    field_name = key.split('_', 2)[-1]  # Extract custom field name
+                    custom_fields[field_name] = request.POST[key]
+            
+            # Create new employee
+            employee = Employee.objects.create(
+                name=name,
+                email=email,
+                position=position,
+                custom_fields=custom_fields
+            )
+
+            # Prepare the response data for successful creation
+            response_data = {
+                'message': 'Employee created successfully!',
+                'redirect_url': reverse('employee_detail', kwargs={'pk': employee.pk})  # Redirect URL to the employee profile page
+            }
+            return JsonResponse(response_data, status=200)
         
-        # Retrieve custom fields from the POST request
-        custom_fields = {}
-        for key in request.POST:
-            if key.startswith('custom_field_'):
-                field_name = key.split('_', 2)[-1]  # Extract custom field name
-                custom_fields[field_name] = request.POST[key]
-        
-        # Create new employee
-        employee = Employee.objects.create(
-            name=name,
-            email=email,
-            position=position,
-            custom_fields=custom_fields
-        )
-        return redirect('employee_detail', pk=employee.pk)
+        except Exception as e:
+            # Return error message in case of exception
+            return JsonResponse({'error': str(e)}, status=500)
     
     return render(request, 'create_employee.html')
 
