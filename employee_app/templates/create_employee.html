@@ -1,49 +1,131 @@
-<!-- templates/employee/create_employee.html -->
 {% extends 'base.html' %}
 
 {% block title %}Create Employee - Employee Management{% endblock %}
 
 {% block content %}
 <div class="container mt-0">
+    <div class="row justify-content-end">
+        <!-- Search Bar -->
+        <div class="col-3">
+            <input type="text" id="search-bar" class="form-control form-control-sm" placeholder="Search fields...">
+        </div>
+    </div>
+    
     <h3 class="text-center">Add Employee</h3>
-    <form method="post" class="mt-4">
+    
+    <form id="employee-form" method="post" class="mt-4">
         {% csrf_token %}
         
-        <div class="mb-3">
-            <label for="name" class="form-label">Name</label>
-            <input type="text" id="name" name="name" class="form-control" required>
-        </div>
-        
-        <div class="mb-3">
-            <label for="email" class="form-label">Email</label>
-            <input type="email" id="email" name="email" class="form-control" required>
-        </div>
-        
-        <div class="mb-3">
-            <label for="position" class="form-label">Position</label>
-            <input type="text" id="position" name="position" class="form-control" required>
-        </div>
+        <div id="form-fields-container">
+            <div class="mb-3 sortable-item">
+                <label for="name" class="form-label">Name</label>
+                <input type="text" id="name" name="name" class="form-control" required>
+            </div>
+            
+            <div class="mb-3 sortable-item">
+                <label for="email" class="form-label">Email</label>
+                <input type="email" id="email" name="email" class="form-control" required>
+            </div>
+            
+            <div class="mb-3 sortable-item">
+                <label for="position" class="form-label">Position</label>
+                <input type="text" id="position" name="position" class="form-control" required>
+            </div>
 
-        <h4 class="mt-4">Custom Fields</h4>
-        <div id="custom-fields-container" class="mb-3"></div>
+            <h4 class="mt-4">Custom Fields</h4>
+            <div id="custom-fields-container" class="sortable-item mb-3"></div>
+        </div>
+        
         <button type="button" id="add-custom-field" class="btn btn-outline-secondary mb-5">Add Custom Field</button>
         <button type="submit" class="btn btn-primary mb-5">Save</button>
     </form>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
-    document.getElementById('add-custom-field').addEventListener('click', function() {
-        const container = document.getElementById('custom-fields-container');
-        const fieldName = prompt("Enter custom field name:");
-        if (fieldName) {
-            const inputDiv = document.createElement('div');
-            inputDiv.classList.add('mb-3');
-            inputDiv.innerHTML = `
-                <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
-                <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
-            `;
-            container.appendChild(inputDiv);
-        }
+    $(document).ready(function() {
+        // Add custom field
+        $('#add-custom-field').click(function() {
+            const container = $('#custom-fields-container');
+            const fieldName = prompt("Enter custom field name:");
+            if (fieldName) {
+                const inputDiv = $('<div class="mb-3 sortable-item"></div>');
+                inputDiv.html(`
+                    <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
+                    <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
+                `);
+                container.append(inputDiv);
+            }
+        });
+
+        // Make fields draggable
+        $('#form-fields-container').sortable({
+            items: '.sortable-item', 
+            cursor: 'move',          
+            opacity: 0.7,            
+            placeholder: 'ui-sortable-placeholder',
+            helper: 'clone',         
+            distance: 5,             
+            tolerance: 'pointer',    
+            scroll: true,            
+            scrollSensitivity: 50,   
+            scrollSpeed: 10,         
+            delay: 100,              
+            start: function(event, ui) {
+                ui.helper.css('z-index', 999); 
+            }
+        });
+
+        // Make custom fields container dragable
+        $('#custom-fields-container').sortable({
+            items: '.sortable-item', 
+            cursor: 'move',          
+            opacity: 0.7,            
+            placeholder: 'ui-sortable-placeholder',
+            helper: 'clone',         
+            distance: 5,             
+            tolerance: 'pointer',    
+            scroll: true,            
+            scrollSensitivity: 50,   
+            scrollSpeed: 10,         
+            delay: 100,              
+            start: function(event, ui) {
+                ui.helper.css('z-index', 999); 
+            }
+        });
+
+       // Search functionality
+        $('#search-bar').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('#form-fields-container .sortable-item').each(function() {
+                const labelText = $(this).find('label').text().toLowerCase();
+                // Use .text() instead of .val() for empty or undefined values
+                const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
+                $(this).toggle(labelText.includes(value) || inputValue.includes(value));
+            });
+        });
+
+
+        // Form submission via AJAX
+        $('form').on('submit', function(e) {
+            e.preventDefault(); 
+
+            const formData = $(this).serialize(); 
+            $.ajax({
+                url: $(this).attr('action'), 
+                type: 'POST',
+                data: formData,
+                success: function(response) {
+                    alert('Form submitted successfully!');
+                    window.location.href = '{% url "employee_list" %}'; 
+                },
+                error: function(xhr, status, error) {
+                    alert('There was an error submitting the form: ' + error);
+                }
+            });
+        });
     });
 </script>
+
 {% endblock %}
