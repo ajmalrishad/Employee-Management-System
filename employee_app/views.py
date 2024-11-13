@@ -87,7 +87,11 @@ def edit_employee(request, pk):
 @login_required
 def employee_list(request):
     employees = Employee.objects.all()  # Fetch all employees
-    return render(request, 'employee_list.html', {'employees': employees})
+    custom_fields = set()
+    for employee in employees:
+        custom_fields.update(employee.custom_fields.keys())
+    custom_fields = [{'name': field} for field in custom_fields]
+    return render(request, 'employee_list.html', {'employees': employees, 'custom_fields': custom_fields})
 
 @admin_only
 @login_required

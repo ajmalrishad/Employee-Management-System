@@ -1,12 +1,13 @@
-<!-- templates/employee/employee_list.html -->
 {% extends 'base.html' %}
+{% load custom_filters %}
+
 
 {% block title %}Employee List - Employee Management{% endblock %}
 
 {% block content %}
 <div class="container">
-     <!-- Search Bar -->
-     <div class="row justify-content-end">
+    <!-- Search Bar -->
+    <div class="row justify-content-end">
         <div class="col-3">
             <input type="text" id="search-bar" class="form-control form-control-sm" placeholder="Search employees...">
         </div>
@@ -34,6 +35,10 @@
                         <th>Name</th>
                         <th>Email</th>
                         <th>Position</th>
+                        <!-- Dynamically add custom fields as th -->
+                        {% for field in custom_fields %}
+                            <th>{{ field.name }}</th>
+                        {% endfor %}
                         <th>Actions</th>
                     </tr>
                 </thead>
@@ -44,6 +49,10 @@
                             <td>{{ employee.name }}</td>
                             <td>{{ employee.email }}</td>
                             <td>{{ employee.position }}</td>
+                            <!-- Dynamically add custom fields as td -->
+                            {% for field in custom_fields %}
+                                <td>{{ employee.custom_fields|get_field:field.name }}</td>
+                            {% endfor %}
                             <td>
                                 <a href="{% url 'employee_detail' employee.id %}" class="btn btn-primary btn-sm">View</a>
                                 <a href="{% url 'edit_employee' employee.id %}" class="btn btn-success btn-sm">Edit</a>
@@ -73,21 +82,26 @@
     </div>
 </div>
 
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    // Search functionality for employee list
-    document.getElementById('search-bar').addEventListener('keyup', function() {
-        const value = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#employee-table .employee-row');
-        
-        rows.forEach(function(row) {
-            const name = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-            const email = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-            const position = row.querySelector('td:nth-child(4)').textContent.toLowerCase();
+    // Search functionality for employee list using jQuery
+    $('#search-bar').on('keyup', function() {
+        const value = $(this).val().toLowerCase();
+        $('#employee-table .employee-row').each(function() {
+            let row = $(this);
+            let showRow = false;
             
-            if (name.includes(value) || email.includes(value) || position.includes(value)) {
-                row.style.display = '';
+            row.find('td').each(function() {
+                let cellText = $(this).text().toLowerCase();
+                if (cellText.includes(value)) {
+                    showRow = true;
+                }
+            });
+
+            if (showRow) {
+                row.show();
             } else {
-                row.style.display = 'none';
+                row.hide();
             }
         });
     });
