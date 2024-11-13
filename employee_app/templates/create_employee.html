@@ -17,127 +17,150 @@
         {% csrf_token %}
         
         <div id="form-fields-container">
-            <div class="mb-3 sortable-item">
+            <div class="mb-3 sortable-item" data-id="name">
                 <label for="name" class="form-label">Name</label>
                 <input type="text" id="name" name="name" class="form-control" required>
             </div>
             
-            <div class="mb-3 sortable-item">
+            <div class="mb-3 sortable-item" data-id="email">
                 <label for="email" class="form-label">Email</label>
                 <input type="email" id="email" name="email" class="form-control" required>
             </div>
             
-            <div class="mb-3 sortable-item">
+            <div class="mb-3 sortable-item" data-id="position">
                 <label for="position" class="form-label">Position</label>
                 <input type="text" id="position" name="position" class="form-control" required>
             </div>
-
-            <h4 class="mt-4">Custom Fields</h4>
-            <div id="custom-fields-container" class="sortable-item mb-3"></div>
         </div>
         
-        <button type="button" id="add-custom-field" class="btn btn-outline-secondary mb-5">Add Custom Field</button>
+        <button type="button" id="add-custom-field" class="btn btn-outline-success mb-5">Add Custom Field</button>
         <button type="submit" class="btn btn-primary mb-5">Save</button>
     </form>
 </div>
+
+<!-- CSS Styles for Drag-and-Drop -->
+<style>
+    /* Smooth transition for items and placeholder */
+    .sortable-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: #f8f9fa; /* light background */
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+    }
+
+    .sortable-item.dragging {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+        background-color: #e9ecef; /* slightly darker during drag */
+    }
+
+    /* Enhanced placeholder styling */
+    .ui-sortable-placeholder {
+        background-color: #e2e6ea;
+        border: 2px dashed #adb5bd;
+        border-radius: 5px;
+        visibility: visible !important;
+        height: 50px; /* consistent height */
+        margin-bottom: 8px;
+        transition: height 0.15s ease;
+    }
+</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
     $(document).ready(function() {
+        // Load field order from localStorage
+        const savedOrder = JSON.parse(localStorage.getItem('fieldOrder'));
+        if (savedOrder) {
+            savedOrder.forEach(id => {
+                const field = $(`[data-id="${id}"]`);
+                if (field.length) {
+                    $('#form-fields-container').append(field);
+                }
+            });
+        }
+
         // Add custom field
         $('#add-custom-field').click(function() {
-            const container = $('#custom-fields-container');
+            const container = $('#form-fields-container');
             const fieldName = prompt("Enter custom field name:");
             if (fieldName) {
-                const inputDiv = $('<div class="mb-3 sortable-item"></div>');
+                const inputDiv = $('<div class="mb-3 sortable-item" data-id="custom_field_' + fieldName + '"></div>');
                 inputDiv.html(`
                     <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
                     <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
                 `);
-                container.append(inputDiv);
+                container.append(inputDiv);  // Add new custom field at the end
+                saveFieldOrder();
             }
         });
 
-        // Make fields draggable
+        // Save field order to localStorage
+        function saveFieldOrder() {
+            const order = $('#form-fields-container .sortable-item').map(function() {
+                return $(this).data('id');
+            }).get();
+            localStorage.setItem('fieldOrder', JSON.stringify(order));
+        }
+
+        // Make fields sortable and save order when changed
         $('#form-fields-container').sortable({
-            items: '.sortable-item', 
-            cursor: 'move',          
-            opacity: 0.7,            
+            items: '.sortable-item',
+            cursor: 'move',
+            opacity: 0.8,
             placeholder: 'ui-sortable-placeholder',
-            helper: 'clone',         
-            distance: 5,             
-            tolerance: 'pointer',    
-            scroll: true,            
-            scrollSensitivity: 50,   
-            scrollSpeed: 10,         
-            delay: 100,              
+            helper: 'clone',
+            scroll: true,
+            scrollSensitivity: 50,
+            scrollSpeed: 10,
+            delay: 150,
             start: function(event, ui) {
-                ui.helper.css('z-index', 999); 
+                ui.helper.css('z-index', 999);
+                ui.item.addClass('dragging'); // Add dragging style
+            },
+            stop: function(event, ui) {
+                saveFieldOrder();  // Save order after sorting
+                ui.item.removeClass('dragging'); // Remove dragging style
             }
         });
 
-        // Make custom fields container dragable
-        $('#custom-fields-container').sortable({
-            items: '.sortable-item', 
-            cursor: 'move',          
-            opacity: 0.7,            
-            placeholder: 'ui-sortable-placeholder',
-            helper: 'clone',         
-            distance: 5,             
-            tolerance: 'pointer',    
-            scroll: true,            
-            scrollSensitivity: 50,   
-            scrollSpeed: 10,         
-            delay: 100,              
-            start: function(event, ui) {
-                ui.helper.css('z-index', 999); 
-            }
-        });
-
-       // Search functionality
+        // Search functionality
         $('#search-bar').on('keyup', function() {
             const value = $(this).val().toLowerCase();
             $('#form-fields-container .sortable-item').each(function() {
                 const labelText = $(this).find('label').text().toLowerCase();
-                // Use .text() instead of .val() for empty or undefined values
                 const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
                 $(this).toggle(labelText.includes(value) || inputValue.includes(value));
             });
         });
 
-
         // Form submission via AJAX
         $('form').on('submit', function(e) {
-            e.preventDefault(); 
-        
-            const formData = $(this).serialize(); 
+            e.preventDefault();
+            const formData = $(this).serialize();
             $.ajax({
-                url: $(this).attr('action'), 
+                url: $(this).attr('action'),
                 type: 'POST',
                 data: formData,
                 success: function(response) {
-                    // Check for a custom success message in the response
                     if (response.message) {
                         alert(response.message);
                     } else {
                         alert('Form submitted successfully!');
                     }
-                    // Redirect if a redirect URL is provided in the response
                     if (response.redirect_url) {
                         window.location.href = response.redirect_url;
                     }
                 },
                 error: function(xhr) {
-                    // Attempt to display error message from response
                     const errorMessage = xhr.responseJSON && xhr.responseJSON.error
                         ? xhr.responseJSON.error
                         : 'An unexpected error occurred while submitting the form.';
                     alert(errorMessage);
                 }
             });
-        });        
+        });
     });
 </script>
-
 {% endblock %}

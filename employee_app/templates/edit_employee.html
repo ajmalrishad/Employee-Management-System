@@ -1,4 +1,3 @@
-<!-- templates/employee/edit_employee.html -->
 {% extends 'base.html' %}
 
 {% block title %}Edit Employee - Employee Management{% endblock %}
@@ -18,17 +17,17 @@
         {% csrf_token %}
         
         <div id="form-fields-container">
-            <div class="mb-3">
+            <div class="mb-3 sortable-item" data-id="name">
                 <label for="name" class="form-label">Name</label>
                 <input type="text" id="name" name="name" class="form-control" value="{{ employee.name }}" required>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-3 sortable-item" data-id="email">
                 <label for="email" class="form-label">Email</label>
                 <input type="email" id="email" name="email" class="form-control" value="{{ employee.email }}" required>
             </div>
             
-            <div class="mb-3">
+            <div class="mb-3 sortable-item" data-id="position">
                 <label for="position" class="form-label">Position</label>
                 <input type="text" id="position" name="position" class="form-control" value="{{ employee.position }}" required>
             </div>
@@ -49,74 +48,116 @@
     </form>
 </div>
 
+<!-- CSS Styles for Drag-and-Drop -->
+<style>
+    .sortable-item {
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background-color: #f8f9fa; /* light background */
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+    
+    .sortable-item.dragging {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        background-color: #e9ecef;
+    }
+    
+    .ui-sortable-placeholder {
+        background-color: #e2e6ea;
+        border: 2px dashed #adb5bd;
+        border-radius: 5px;
+        visibility: visible !important;
+        height: 50px;
+        margin-bottom: 8px;
+        transition: height 0.15s ease;
+    }    
+</style>
+
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
     $(document).ready(function() {
-        // Make fields draggable (sortable)
-        $('#form-fields-container').sortable({
-            items: '.mb-3', 
-            cursor: 'move',          
-            opacity: 0.7,            
-            placeholder: 'ui-sortable-placeholder',
-            helper: 'clone',         
-            distance: 5,             
-            tolerance: 'pointer',    
-            scroll: true,            
-            scrollSensitivity: 50,   
-            scrollSpeed: 10,         
-            delay: 100,              
-            start: function(event, ui) {
-                ui.helper.css('z-index', 999); 
+        // Function to load saved field order from localStorage
+        function loadSavedOrder() {
+            const savedOrder = JSON.parse(localStorage.getItem('formFieldOrder'));
+            if (savedOrder) {
+                // Only restore the order, not the input values
+                $('#form-fields-container').html(savedOrder.formFields);
+                $('#custom-fields-container').html(savedOrder.customFields);
             }
-        });
-
-        // Make custom fields draggable
-        $('#custom-fields-container').sortable({
+        }
+    
+        // Make form fields and custom fields draggable
+        $('#form-fields-container, #custom-fields-container').sortable({
             items: '.sortable-item',
-            cursor: 'move',          
-            opacity: 0.7,            
+            cursor: 'move',
+            opacity: 0.7,
             placeholder: 'ui-sortable-placeholder',
-            helper: 'clone',         
-            distance: 5,             
-            tolerance: 'pointer',    
-            scroll: true,            
-            scrollSensitivity: 50,   
-            scrollSpeed: 10,         
-            delay: 100,              
+            helper: 'clone',
+            distance: 5,
+            tolerance: 'pointer',
+            scroll: true,
+            scrollSensitivity: 50,
+            scrollSpeed: 10,
+            delay: 100,
             start: function(event, ui) {
-                ui.helper.css('z-index', 999); 
+                ui.helper.css('z-index', 999);
+                ui.item.addClass('dragging');
+            },
+            stop: function(event, ui) {
+                ui.item.removeClass('dragging');
+                saveFieldOrder(); // Save the new field order after drag
             }
         });
-
+    
+        // Save the new order of the fields in localStorage (without input data)
+        function saveFieldOrder() {
+            // Clone the elements and remove input values before saving the order
+            const formFields = $('#form-fields-container').clone();
+            const customFields = $('#custom-fields-container').clone();
+    
+            // Remove input values to save only the order and structure
+            formFields.find('input').val('');
+            customFields.find('input').val('');
+    
+            // Save only the HTML structure (without input values)
+            localStorage.setItem('formFieldOrder', JSON.stringify({
+                formFields: formFields.html(),
+                customFields: customFields.html()
+            }));
+        }
+    
         // Add custom field
         $('#add-custom-field').click(function() {
             const container = $('#custom-fields-container');
             const fieldName = prompt("Enter custom field name:");
             if (fieldName) {
-                const inputDiv = $('<div class="mb-3 sortable-item"></div>');
+                const inputDiv = $('<div class="mb-3 sortable-item" data-id="custom_field_' + fieldName + '"></div>');
                 inputDiv.html(`
                     <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
                     <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
                 `);
                 container.append(inputDiv);
+                saveFieldOrder(); // Save the new field order after adding a custom field
             }
         });
-
+    
         // Search functionality
         $('#search-bar').on('keyup', function() {
             const value = $(this).val().toLowerCase();
-            
-            // Search for matching fields in both form fields and custom fields
-            $('#form-fields-container .mb-3, #custom-fields-container .sortable-item').each(function() {
+            $('#form-fields-container .sortable-item, #custom-fields-container .sortable-item').each(function() {
                 const labelText = $(this).find('label').text().toLowerCase();
                 const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
-                
-                // Hide or show fields based on search query
                 $(this).toggle(labelText.includes(value) || inputValue.includes(value));
             });
         });
+    
+        // Load saved order when the page loads
+        loadSavedOrder();
     });
+    
 </script>
 
 {% endblock %}
