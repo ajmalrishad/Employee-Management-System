@@ -38,34 +38,18 @@
     </form>
 </div>
 
-<!-- CSS Styles for Drag-and-Drop -->
+<!-- CSS for Delete Button on Custom Fields -->
 <style>
-    /* Smooth transition for items and placeholder */
-    .sortable-item {
-        transition: transform 0.2s ease, box-shadow 0.2s ease;
-        background-color: #f8f9fa; /* light background */
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 8px;
+    .input-group .delete-field {
+        color: white;
+        background-color: red;
+        border: none;
     }
-
-    .sortable-item.dragging {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-        background-color: #e9ecef; /* slightly darker during drag */
-    }
-
-    /* Enhanced placeholder styling */
-    .ui-sortable-placeholder {
-        background-color: #e2e6ea;
-        border: 2px dashed #adb5bd;
-        border-radius: 5px;
-        visibility: visible !important;
-        height: 50px; /* consistent height */
-        margin-bottom: 8px;
-        transition: height 0.15s ease;
+    .input-group .delete-field i {
+        color: white;
     }
 </style>
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
@@ -81,19 +65,29 @@
             });
         }
 
-        // Add custom field
+        // Add custom field with delete button
         $('#add-custom-field').click(function() {
             const container = $('#form-fields-container');
             const fieldName = prompt("Enter custom field name:");
             if (fieldName) {
-                const inputDiv = $('<div class="mb-3 sortable-item" data-id="custom_field_' + fieldName + '"></div>');
-                inputDiv.html(`
-                    <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
-                    <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
+                const inputDiv = $(`
+                    <div class="mb-3 sortable-item" data-id="custom_field_${fieldName}">
+                        <label for="custom_field_${fieldName}" class="form-label">${fieldName}</label>
+                        <div class="input-group">
+                            <input type="text" id="custom_field_${fieldName}" name="custom_field_${fieldName}" class="form-control" placeholder="${fieldName}">
+                            <button type="button" class="btn btn-danger delete-field">
+                                <i class="fa fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
                 `);
                 container.append(inputDiv);  // Add new custom field at the end
-                saveFieldOrder();
             }
+        });
+
+        // Handle delete button click on custom fields only
+        $('#form-fields-container').on('click', '.delete-field', function() {
+            $(this).closest('.sortable-item').remove(); // Remove only custom fields
         });
 
         // Save field order to localStorage
@@ -104,7 +98,7 @@
             localStorage.setItem('fieldOrder', JSON.stringify(order));
         }
 
-        // Make fields sortable and save order when changed
+        // Make fields sortable
         $('#form-fields-container').sortable({
             items: '.sortable-item',
             cursor: 'move',
@@ -117,27 +111,19 @@
             delay: 150,
             start: function(event, ui) {
                 ui.helper.css('z-index', 999);
-                ui.item.addClass('dragging'); // Add dragging style
+                ui.item.addClass('dragging');
             },
             stop: function(event, ui) {
-                saveFieldOrder();  // Save order after sorting
-                ui.item.removeClass('dragging'); // Remove dragging style
+                ui.item.removeClass('dragging');
+                saveFieldOrder(); // Save order on stop
             }
         });
 
-        // Search functionality
-        $('#search-bar').on('keyup', function() {
-            const value = $(this).val().toLowerCase();
-            $('#form-fields-container .sortable-item').each(function() {
-                const labelText = $(this).find('label').text().toLowerCase();
-                const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
-                $(this).toggle(labelText.includes(value) || inputValue.includes(value));
-            });
-        });
-
-        // Form submission via AJAX
+        // Save order on "Save" button click
         $('form').on('submit', function(e) {
             e.preventDefault();
+            saveFieldOrder(); // Save order only when form is submitted
+
             const formData = $(this).serialize();
             $.ajax({
                 url: $(this).attr('action'),
@@ -159,6 +145,16 @@
                         : 'An unexpected error occurred while submitting the form.';
                     alert(errorMessage);
                 }
+            });
+        });
+
+        // Search functionality
+        $('#search-bar').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('#form-fields-container .sortable-item').each(function() {
+                const labelText = $(this).find('label').text().toLowerCase();
+                const inputValue = $(this).find('input').val() ? $(this).find('input').val().toLowerCase() : '';
+                $(this).toggle(labelText.includes(value) || inputValue.includes(value));
             });
         });
     });
