@@ -47,12 +47,60 @@
         <button type="submit" class="btn btn-primary mb-5" id="save-changes">Save Changes</button>
     </form>
 </div>
+<style>
+    /* Base style for sortable items */
+    .sortable-item {
+        border: 1px dashed #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+        cursor: move;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+    }
+
+    /* Hover and dragging effect */
+    .sortable-item:hover, .sortable-item.dragging {
+        background-color: #f1f8ff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Smooth text effect */
+    .sortable-item .form-label {
+        transition: color 0.3s ease;
+    }
+    
+    /* Placeholder style when sorting */
+    .ui-sortable-placeholder {
+        background-color: #e0f7ff;
+        visibility: visible !important;
+        height: 40px;
+        border: 1px dashed #007bff;
+        opacity: 0.5;
+    }
+
+    /* Custom field delete button */
+    .delete-field {
+        color: white;
+        background-color: red;
+        border: none;
+        position: absolute;
+        top: 8px;
+        right: 10px;
+    }
+
+    /* Font Awesome trash icon color inside delete button */
+    .delete-field i {
+        color: white;
+    }
+</style>
+
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
 <script>
     $(document).ready(function() {
-        const employeeId = "{{ employee.id }}"; // Assuming employee.id is available
+        const employeeId = "{{ employee.id }}";
 
         function loadSavedOrder() {
             const savedOrder = JSON.parse(localStorage.getItem('formFieldOrder_' + employeeId));
@@ -60,7 +108,6 @@
                 const formFieldsContainer = $('#form-fields-container');
                 const customFieldsContainer = $('#custom-fields-container');
                 
-                // Append fields in saved order
                 savedOrder.formFields.forEach(id => {
                     formFieldsContainer.append($('#' + id));
                 });
@@ -112,7 +159,24 @@
         $('#save-changes').click(function(event) {
             event.preventDefault();
             saveFieldOrder();
-            $('#employee-form').submit();
+            
+            $.ajax({
+                url: "{% url 'edit_employee' employee.id %}", // Adjust the URL to match your view's URL pattern
+                type: "POST",
+                data: $('#employee-form').serialize(),
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    alert('Changes saved successfully!');
+                    window.location.href = "{% url 'employee_list' %}";
+                    // Optional: update UI or perform additional actions on success
+                },
+                error: function(xhr, status, error) {
+                    alert('An error occurred while saving changes.');
+                    console.log(error);
+                }
+            });
         });
 
         loadSavedOrder();

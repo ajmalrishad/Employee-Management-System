@@ -48,7 +48,52 @@
     .input-group .delete-field i {
         color: white;
     }
+    .sortable-item {
+        border: 1px dashed #ddd;
+        padding: 10px;
+        margin-bottom: 10px;
+        background-color: #f9f9f9;
+        cursor: move;
+        transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+    }
+
+    /* Hover and dragging effect */
+    .sortable-item:hover, .sortable-item.dragging {
+        background-color: #f1f8ff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Smooth text effect */
+    .sortable-item .form-label {
+        transition: color 0.3s ease;
+    }
+    
+    /* Placeholder style when sorting */
+    .ui-sortable-placeholder {
+        background-color: #e0f7ff;
+        visibility: visible !important;
+        height: 40px;
+        border: 1px dashed #007bff;
+        opacity: 0.5;
+    }
+
+    /* Custom field delete button */
+    .delete-field {
+        color: white;
+        background-color: red;
+        border: none;
+        position: absolute;
+        top: 8px;
+        right: 10px;
+    }
+
+    /* Font Awesome trash icon color inside delete button */
+    .delete-field i {
+        color: white;
+    }    
 </style>
+
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
@@ -98,7 +143,7 @@
             localStorage.setItem('fieldOrder', JSON.stringify(order));
         }
 
-        // Make fields sortable
+        // Make fields sortable with smooth drag-and-drop experience
         $('#form-fields-container').sortable({
             items: '.sortable-item',
             cursor: 'move',
@@ -109,17 +154,20 @@
             scrollSensitivity: 50,
             scrollSpeed: 10,
             delay: 150,
+            tolerance: 'pointer', // Makes sorting smoother when dragging near edges
+            revert: 150, // Smooth transition when dropping
             start: function(event, ui) {
                 ui.helper.css('z-index', 999);
                 ui.item.addClass('dragging');
+                ui.placeholder.height(ui.helper.outerHeight()); // Match height of dragged item
             },
             stop: function(event, ui) {
                 ui.item.removeClass('dragging');
-                saveFieldOrder(); // Save order on stop
+                // Field order is not saved here; it will be saved on form submit
             }
         });
 
-        // Save order on "Save" button click
+        // Save order and submit form on "Save" button click
         $('form').on('submit', function(e) {
             e.preventDefault();
             saveFieldOrder(); // Save order only when form is submitted
